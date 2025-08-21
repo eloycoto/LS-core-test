@@ -12,6 +12,8 @@ dependencies = [
     "requests>=2.31.0",
     "typing-extensions>=4.8.0",
     "fastmcp>=0.1.0",
+    "playwright>=1.54.0",
+    "ipdb >= 0.13.13",
 ]
 
 [project.optional-dependencies]
