@@ -11,9 +11,11 @@ RULES = """
 ## Planning Phase
 1) Analyze the user request and identify the workflow steps
 2) Plan the workflow flow: initial state → intermediate states → end state
-3) Identify required functions, their types, and operations
+3) Identify required functions, their types, and operations. **Use orchestrator_orchestrator_get_sample_workflow() for reference examples when unsure about implementation patterns.**
 4) Define error scenarios and error handling states
 5) Map out state transitions and ensure proper flow validation
+6) **MANDATORY**: Always run workflow validation using **orchestrator_compile_workflow()** tool to check compilation and structural integrity. The workflow MUST compile successfully before completion.
+7) **MANDATORY**: Always provide a structured workflow preview using **orchestrator_orchestrator_preview_workflow()** tool in SVG format.
 
 ## Validation Rules
 
@@ -305,13 +307,18 @@ Event states wait for and handle CloudEvents:
 @orchestrator_mcp.tool()
 def creation_workflow_rules(session_id: str) -> str:
     """
-    Get comprehensive orchestrator workflow creation rules and validation requirements.
-    This tool provides detailed specifications for creating valid workflows including:
-    - Required JSON structure and mandatory fields
-    - Function types (custom, rest, rpc) with operation formats
-    - State definitions and transition rules
-    - Error handling patterns and validation rules
-    Use this before creating any orchestrator workflow to ensure compliance.
+    **CRITICAL: CALL THIS TOOL FIRST** - Essential orchestrator workflow creation rules.
+
+    This is the PRIMARY reference tool that MUST be called before any workflow creation task.
+    Provides comprehensive specifications for creating valid orchestrator workflows:
+    - Complete JSON structure with all mandatory fields
+    - Function types (custom, rest, rpc, expression) with correct operation formats
+    - State definitions, transitions, and flow validation rules
+    - Error handling patterns and event management
+    - Validation requirements and compilation guidelines
+
+    **Always use this tool at the start of any workflow-related task to ensure compliance.**
+    Contains essential context that prevents common workflow creation errors.
     """
     logger.info(f"orchestrator_creation_workflow_rules for session_id='{session_id}'")
 

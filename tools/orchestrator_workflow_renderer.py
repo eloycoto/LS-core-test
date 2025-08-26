@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 from pathlib import Path
@@ -5,6 +6,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 from .orchestrator_service import orchestrator_mcp
+from fastmcp.utilities.types import Image
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,29 @@ class WorkflowRenderer:
         self.html_path = (
             Path(__file__).parent.parent / "assets" / "workflow-renderer" / "index.html"
         )
+
+    async def render_workflow_to_png(self, workflow_data: str) -> str:
+        """
+        Render workflow data to PNG in base64 format
+        
+        Args:
+            workflow_data (str): JSON string of workflow data
+            
+        Returns:
+            str: Base64 encoded PNG image
+        """
+        import cairosvg
+        import io
+        
+        svg = await self.render_workflow_to_svg(workflow_data)
+        
+        # Convert SVG to PNG using cairosvg
+        png_bytes = cairosvg.svg2png(bytestring=svg.encode('utf-8'))
+        
+        # Convert to base64
+        png_base64 = base64.b64encode(png_bytes).decode('utf-8')
+        
+        return png_base64
 
     async def render_workflow_to_svg(self, workflow_data: str) -> str:
         """
@@ -52,16 +77,20 @@ class WorkflowRenderer:
             try:
                 # Example rendering
                 # await page.evaluate("""
-                #     render_workflow(
-                #         document.getElementById("renderWorkflow"),
-                #         JSON.stringify(sample_data)
-                #     );
+                    # render_workflow(
+                    #     document.getElementById("renderWorkflow"),
+                    #     JSON.stringify(sample_data)
+                    # );
                 # """)
-
+                for x in range(0,100):
+                    logger.info("------------------------------------------");
+                # import ipdb; ipdb.set_trace()
                 await page.evaluate(f"""
+                    let workflow_data = {workflow_data};
+                    console.log("Workflow data:", workflow_data);
                     render_workflow(
                         document.getElementById("renderWorkflow"),
-                        {workflow_data}
+                        JSON.stringify(workflow_data)
                     );
                 """)
 
@@ -92,16 +121,16 @@ class WorkflowRenderer:
 
 
 @orchestrator_mcp.tool()
-async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
+async def orchestrator_preview_workflow(session_id: str, workflow: str) -> Image:
     """
-    Generate SVG preview of a orchestrator workflow.
+    Generate PNG preview of a orchestrator workflow.
 
     Args:
         session_id: Session identifier for tracking
         workflow: JSON string representing the serverless workflow
 
     Returns:
-        str: SVG content of the rendered workflow
+        Image: PNG image of the rendered workflow
     """
     try:
         logger.info(f"Generating workflow preview for session {session_id}")
@@ -113,12 +142,15 @@ async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
             logger.error(f"Invalid JSON workflow: {e}")
             raise ValueError(f"Invalid JSON workflow: {e}")
 
-        # Create renderer and generate SVG
+        # Create renderer and generate PNG
         renderer = WorkflowRenderer()
-        svg_content = await renderer.render_workflow_to_svg(workflow)
+        png_base64 = await renderer.render_workflow_to_png(workflow)
+        
+        # Convert base64 back to bytes for Image type
+        png_bytes = base64.b64decode(png_base64)
 
-        logger.info(f"Successfully generated SVG for session {session_id}")
-        return svg_content
+        logger.info(f"Successfully generated PNG for session {session_id}")
+        return Image(data=png_bytes, mime_type="image/png")
 
     except Exception as e:
         logger.error(f"Error generating workflow preview for session {session_id}: {e}")
