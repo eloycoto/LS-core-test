@@ -6,6 +6,7 @@ import uuid
 
 from pathlib import Path
 from playwright.async_api import async_playwright
+from fastmcp.server.context import Context
 
 from .orchestrator_service import orchestrator_mcp
 
@@ -125,7 +126,7 @@ class WorkflowRenderer:
 
 
 @orchestrator_mcp.tool()
-async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
+async def orchestrator_preview_workflow(ctx: Context, session_id: str, workflow: str) -> str:
     """
     Generate PNG preview of a orchestrator workflow.
 
@@ -136,6 +137,11 @@ async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
     Returns:
         str: URL of the PNG image
     """
+    host = ctx.get_http_request().url
+    hostname = host.hostname
+    if hostname == "host.docker.internal":
+        hostname = "localhost"
+
     try:
         logger.info(f"Generating workflow preview for session {session_id}")
 
@@ -150,9 +156,8 @@ async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
         renderer = WorkflowRenderer()
         png_path = await renderer.render_workflow_to_png_file(workflow)
 
-        # Extract filename from path
         filename = Path(png_path).name
-        image_url = f"/static/workflows/{filename}"
+        image_url = f"http://{hostname}:{host.port}/static/{filename}"
 
         logger.info(f"Successfully generated PNG for session {session_id} at {image_url}")
         return image_url

@@ -15,7 +15,7 @@ RULES = """
 4) Define error scenarios and error handling states
 5) Map out state transitions and ensure proper flow validation
 6) **MANDATORY**: Always run workflow validation using **orchestrator_compile_workflow()** tool to check compilation and structural integrity. The workflow MUST compile successfully before completion.
-7) **MANDATORY**: Always provide a structured workflow preview using **orchestrator_orchestrator_preview_workflow()** tool in PNG format. The format should be like: ![Workflow Preview]($tool_response) (MANDATORY: tool_response shouldn't be modified)
+7) **MANDATORY**: Always provide a structured workflow preview using **orchestrator_orchestrator_preview_workflow()** tool in PNG format. The format should be like: ![Workflow Preview]($tool_response)
 
 
 ## Validation Rules
