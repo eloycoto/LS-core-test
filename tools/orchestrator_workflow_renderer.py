@@ -1,8 +1,8 @@
-import base64
 import cairosvg
 import io
 import json
 import logging
+import uuid
 
 from pathlib import Path
 from playwright.async_api import async_playwright
@@ -17,22 +17,35 @@ class WorkflowRenderer:
         self.html_path = (
             Path(__file__).parent.parent / "assets" / "workflow-renderer" / "index.html"
         )
+        self.workflows_dir = (
+            Path(__file__).parent.parent / "assets" / "workflows"
+        )
 
-    async def render_workflow_to_png(self, workflow_data: str) -> str:
+    async def render_workflow_to_png_file(self, workflow_data: str) -> str:
         """
-        Render workflow data to PNG in base64 format
+        Render workflow data to PNG file and return the file path
 
         Args:
             workflow_data (str): JSON string of workflow data
 
         Returns:
-            str: PNG image
+            str: Path to the saved PNG file
         """
+        # Generate unique filename
+        file_id = str(uuid.uuid4())
+        png_path = self.workflows_dir / f"{file_id}.png"
+
+        # Ensure the directory exists
+        self.workflows_dir.mkdir(parents=True, exist_ok=True)
 
         svg = await self.render_workflow_to_svg(workflow_data)
-
         png_bytes = cairosvg.svg2png(bytestring=svg.encode('utf-8'))
-        return png_bytes
+
+        # Save to file
+        with open(png_path, 'wb') as f:
+            f.write(png_bytes)
+
+        return str(png_path)
 
     async def render_workflow_to_svg(self, workflow_data: str) -> str:
         """
@@ -121,7 +134,7 @@ async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
         workflow: JSON string representing the serverless workflow
 
     Returns:
-        str: Data URL of the PNG image
+        str: URL of the PNG image
     """
     try:
         logger.info(f"Generating workflow preview for session {session_id}")
@@ -133,14 +146,16 @@ async def orchestrator_preview_workflow(session_id: str, workflow: str) -> str:
             logger.error(f"Invalid JSON workflow: {e}")
             raise ValueError(f"Invalid JSON workflow: {e}")
 
-        # Create renderer and generate PNG
+        # Create renderer and generate PNG file
         renderer = WorkflowRenderer()
-        png_bytes = await renderer.render_workflow_to_png(workflow)
+        png_path = await renderer.render_workflow_to_png_file(workflow)
 
-        png_base64 = base64.b64encode(png_bytes).decode('utf-8')
-        data_url = f"data:image/png;base64,{png_base64}"
-        logger.info(f"Successfully generated PNG for session {session_id}")
-        return data_url
+        # Extract filename from path
+        filename = Path(png_path).name
+        image_url = f"/static/workflows/{filename}"
+
+        logger.info(f"Successfully generated PNG for session {session_id} at {image_url}")
+        return image_url
 
     except Exception as e:
         logger.error(f"Error generating workflow preview for session {session_id}: {e}")
