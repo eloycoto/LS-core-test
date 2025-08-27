@@ -1,23 +1,24 @@
 import logging
+import signal
+import uvicorn
 
 from fastmcp import FastMCP
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from starlette.routing import Mount
 
 from tools.orchestrator_service import orchestrator_mcp
 
-# Set up logging to see what's happening
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 mcp = FastMCP(name="Current Date and Time", port=8000)
-
-# Mount the orchestrator service
 mcp.mount(orchestrator_mcp, prefix="orchestrator")
 
+mcp_app = mcp.http_app()
 
-if __name__ == "__main__":
-    mcp.run(
-        transport="http",
-        host="0.0.0.0",
-    )
+app = FastAPI(lifespan=mcp_app.lifespan)
+app.mount("/static", StaticFiles(directory="assets/workflows/"), name="static")
+app.mount("/", mcp_app)
