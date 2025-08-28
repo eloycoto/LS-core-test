@@ -1,12 +1,11 @@
-import cairosvg
-import io
 import json
 import logging
 import uuid
-
 from pathlib import Path
-from playwright.async_api import async_playwright
+
+import cairosvg
 from fastmcp.server.context import Context
+from playwright.async_api import async_playwright
 
 from .orchestrator_service import orchestrator_mcp
 
@@ -18,9 +17,7 @@ class WorkflowRenderer:
         self.html_path = (
             Path(__file__).parent.parent / "assets" / "workflow-renderer" / "index.html"
         )
-        self.workflows_dir = (
-            Path(__file__).parent.parent / "assets" / "workflows"
-        )
+        self.workflows_dir = Path(__file__).parent.parent / "assets" / "workflows"
 
     async def render_workflow_to_png_file(self, workflow_data: str) -> str:
         """
@@ -40,10 +37,10 @@ class WorkflowRenderer:
         self.workflows_dir.mkdir(parents=True, exist_ok=True)
 
         svg = await self.render_workflow_to_svg(workflow_data)
-        png_bytes = cairosvg.svg2png(bytestring=svg.encode('utf-8'))
+        png_bytes = cairosvg.svg2png(bytestring=svg.encode("utf-8"))
 
         # Save to file
-        with open(png_path, 'wb') as f:
+        with open(png_path, "wb") as f:
             f.write(png_bytes)
 
         return str(png_path)
@@ -85,10 +82,10 @@ class WorkflowRenderer:
             try:
                 # Example rendering
                 # await page.evaluate("""
-                    # render_workflow(
-                    #     document.getElementById("renderWorkflow"),
-                    #     JSON.stringify(sample_data)
-                    # );
+                # render_workflow(
+                #     document.getElementById("renderWorkflow"),
+                #     JSON.stringify(sample_data)
+                # );
                 # """)
 
                 await page.evaluate(f"""
@@ -126,7 +123,9 @@ class WorkflowRenderer:
 
 
 @orchestrator_mcp.tool()
-async def orchestrator_preview_workflow(ctx: Context, session_id: str, workflow: str) -> str:
+async def orchestrator_preview_workflow(
+    ctx: Context, session_id: str, workflow: str
+) -> str:
     """
     Generate PNG preview of a orchestrator workflow.
 
@@ -159,7 +158,9 @@ async def orchestrator_preview_workflow(ctx: Context, session_id: str, workflow:
         filename = Path(png_path).name
         image_url = f"http://{hostname}:{host.port}/static/{filename}"
 
-        logger.info(f"Successfully generated PNG for session {session_id} at {image_url}")
+        logger.info(
+            f"Successfully generated PNG for session {session_id} at {image_url}"
+        )
         return image_url
 
     except Exception as e:

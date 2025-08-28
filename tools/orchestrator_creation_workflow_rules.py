@@ -320,7 +320,8 @@ def creation_workflow_rules(session_id: str) -> str:
 
     **Always use this tool at the start of any workflow-related task to ensure compliance.**
     Contains essential context that prevents common workflow creation errors.
-    """
+    """ # noqa: E501
+
     logger.info(f"orchestrator_creation_workflow_rules for session_id='{session_id}'")
 
     return RULES
